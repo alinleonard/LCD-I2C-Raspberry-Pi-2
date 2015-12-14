@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #--------------------------------------
-#  LCDI2C_backpack.py
+#  lcd_i2c.py
 #  LCD test script using I2C backpack.
 #  Supports 16x2 and 20x4 screens.
 #
@@ -35,6 +35,14 @@ class LCDI2C_backpack(object):
   #Open I2C interface
   #bus = smbus.SMBus(0)  # Rev 1 Pi uses 0
   bus = smbus.SMBus(1) # Rev 2 Pi uses 1
+
+  LCD_CURSORSHIFT = 0x10
+  LCD_DISPLAYMOVE = 0x08
+  LCD_MOVERIGHT = 0x04
+  LCD_MOVELEFT = 0x00
+
+  LCD_ENTRYSHIFTINCREMENT = 0x01
+  LCD_ENTRYMODESET = 0x04
 
   def __init__(self, I2C_ADDR):
     self.I2C_ADDR = I2C_ADDR;
@@ -76,6 +84,12 @@ class LCDI2C_backpack(object):
     self.bus.write_byte(self.I2C_ADDR,(bits & ~self.ENABLE))
     time.sleep(self.E_DELAY)
 
+  def scrollDisplayRight(self):
+    self.lcd_byte(self.LCD_CURSORSHIFT | self.LCD_DISPLAYMOVE | self.LCD_MOVERIGHT, self.LCD_CMD)
+  
+  def scrollDisplayLeft(self):
+    self.lcd_byte(self.LCD_CURSORSHIFT | self.LCD_DISPLAYMOVE | self.LCD_MOVELEFT, self.LCD_CMD)
+
   def message(self, text):
     # Send string to display
     for char in text:
@@ -83,6 +97,14 @@ class LCDI2C_backpack(object):
                 self.lcd_byte(0xC0, self.LCD_CMD)  # next line
             else:
                 self.lcd_byte(ord(char), self.LCD_CHR)
+
+  def lcd_string(self, message,line):
+    # Send string to display
+    message = message.ljust(self.LCD_WIDTH," ")
+    self.lcd_byte(line, self.LCD_CMD)
+
+    for i in range(self.LCD_WIDTH):
+      self.lcd_byte(ord(message[i]),self.LCD_CHR)
 
 
   def clear(self):
